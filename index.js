@@ -1,0 +1,1 @@
+//Note convert training data ending to LF for lunix instead of CR+LF since I copied from windows file
