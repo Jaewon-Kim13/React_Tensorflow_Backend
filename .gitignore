@@ -24,4 +24,6 @@ dist-ssr
 *.sw?
 
 # Directories
-dir_to_ignore/num_data
+/data/*
+/data
+data
