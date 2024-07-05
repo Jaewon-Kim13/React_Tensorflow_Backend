@@ -15,12 +15,20 @@ function getNumberData() {
                 console.error(err);
                 reject(err);
             } else {
-                resolve(data.split("\n"));
+                resolve(strArrToNumArr(data.split("\r\n")));
             }
         });
     });
 }
 
+const strArrToNumArr = (strArr) =>{
+
+    const NumArr = [];
+    strArr.map((string) =>{
+        NumArr.push(string.split(',').map(Number))
+    })
+    return NumArr
+}
 
 app.get("/number-data", async (req, res) => {
     try {
