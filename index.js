@@ -15,25 +15,26 @@ function getNumberData() {
                 console.error(err);
                 reject(err);
             } else {
-                resolve(strArrToNumArr(data.split("\r\n")));
+                resolve(numCSVtoJSON(data.split("\r\n")));
             }
         });
     });
 }
 
-const strArrToNumArr = (strArr) =>{
-
-    const NumArr = [];
+const numCSVtoJSON = (strArr) =>{
+    const x = [];
+    const y = [];
     strArr.map((string) =>{
-        NumArr.push(string.split(',').map(Number))
+        x.push(string.split(',').map(Number).slice(1));
+        y.push(string.split(',').map(Number).shift());
     })
-    return NumArr
+    return {x: x, y: y}
 }
 
 app.get("/number-data", async (req, res) => {
     try {
         const numberData = await getNumberData();
-        res.send({ type: "number_test",size: numberData.length, data: numberData });
+        res.send({ type: "number_test",size: [numberData.x.length, numberData.y.length], data: numberData });
     } catch (error) {
         res.status(500).send({ error: "Failed to retrieve number data" });
     }
