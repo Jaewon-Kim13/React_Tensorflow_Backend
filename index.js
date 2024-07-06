@@ -28,6 +28,8 @@ const numCSVtoJSON = (strArr) =>{
         x.push(string.split(',').map(Number).slice(1));
         y.push(string.split(',').map(Number).shift());
     })
+    x.shift();
+    y.shift();
     return {x: x, y: y}
 }
 
