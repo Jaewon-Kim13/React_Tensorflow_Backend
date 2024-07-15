@@ -13,7 +13,7 @@ import {
 import { error } from "console";
 
 //main functions
-export const compileDense = async (layers: Layer[], loss: string, shape: any): Promise<tf.LayersModel> => {
+export const compileDense = async (layers: any[], loss: string, shape: any): Promise<tf.LayersModel> => {
 	const newLayers: any = layers.map((layer) => ({
 		activation: layer.activation,
 		units: layer.units,
