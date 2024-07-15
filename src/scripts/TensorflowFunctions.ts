@@ -1,77 +1,154 @@
 import * as tf from "@tensorflow/tfjs-node";
-import { MyLayer, Regularizer } from "./InterfacesAndConsts";
+import {
+	activationList,
+	Conv2DLayer,
+	DenseLayer,
+	Flatten,
+	kernelInitializerList,
+	lambdaList,
+	Layer,
+	MaxPooling2D,
+	regularizerList,
+} from "./InterfacesAndConsts";
+import { error } from "console";
 
-export const compileModel = async (layers: MyLayer[], loss: string, data: {x: number[][], y: number[], shape: number}, epoch: number): Promise<tf.LayersModel> => {
-	const newLayers:any = layers.map((layer)=>({activation: layer.activation, units: layer.units, kernelRegularizer: regularizerToFunction(layer.regularizer)}))
-	newLayers[0].inputShape = data.shape;
+//main functions
+export const compileDense = async (layers: Layer[], loss: string, shape: any): Promise<tf.LayersModel> => {
+	const newLayers: any = layers.map((layer) => ({
+		activation: layer.activation,
+		units: layer.units,
+		kernelRegularizer: regularizerToFunction(layer.regularizer),
+	}));
+	newLayers[0].inputShape = shape;
 	const model = tf.sequential();
-	newLayers.forEach((layer: any, index: any) =>{model.add(tf.layers.dense(layer))})
+	newLayers.forEach((layer: any, index: any) => {
+		model.add(tf.layers.dense(layer));
+	});
 
 	model.compile({
-	  loss: loss,
-	  optimizer: tf.train.adam(0.01),
-	  metrics: ['accuracy']
+		loss: loss,
+		optimizer: tf.train.adam(0.01),
+		metrics: ["accuracy"],
 	});
-  
-	const history = await model.fit(tf.tensor(data.x), tf.tensor(data.y), {
-	  epochs: epoch,
-	  batchSize: 100,
-	  callbacks: {
-		onEpochEnd: (epoch, logs) => {
-		  console.log(`Epoch ${epoch + 1}: loss = ${logs?.loss.toFixed(4)}, accuracy = ${logs?.acc.toFixed(4)}`);
-		}
-	  }
-	});
-  
-	console.log('Final accuracy', history.history.acc[history.history.acc.length - 1]);
-	console.log(model)
-  
+
 	return model;
 };
 
+export const compileConv2d = async () => {};
+
+export const train = async (model: tf.LayersModel, dataName: string, index: number) => {};
+
 export const predict = (data: number[], model: any) => {
 	const tensor = tf.tensor(data);
+};
 
-}
-
-//functions
-function regularizerToFunction(reg: Regularizer) {
+//helper functions
+function regularizerToFunction(reg: { regularizer: string; lambda: number }) {
 	let regularizerFunction;
 	switch (reg.regularizer) {
 		case "l1":
-			regularizerFunction = tf.regularizers.l1({l1:reg.lambda});
+			regularizerFunction = tf.regularizers.l1({ l1: reg.lambda });
 			break;
 		case "l2":
-			regularizerFunction = tf.regularizers.l2({l2:reg.lambda});
+			regularizerFunction = tf.regularizers.l2({ l2: reg.lambda });
 			break;
 		case "l1l2":
-			regularizerFunction = tf.regularizers.l1l2({l1: reg.lambda, l2:reg.lambda});
+			regularizerFunction = tf.regularizers.l1l2({ l1: reg.lambda, l2: reg.lambda });
 			break;
 	}
 
-	return regularizerFunction
+	return regularizerFunction;
 }
 
-
-export function updateMyLayer(layer: MyLayer, paramName:string, value:any ){
-	switch(paramName) {
-		case "activation":
-			layer.activation = value;
-			break;
-		case "units":
-			layer.units = value;
-			break;
-		case "regularizer":
-			layer.regularizer.regularizer = value;
-			break;
-		case "lambda":
-			layer.regularizer.lambda = value
-			break;
+const convertLayers = (layers: any[]) => {
+	try {
+		const layerCheck: Layer[] = layers;
+		const fixedLayers = layers.map((layerObj, index) => {
+			switch (layerObj.type) {
+				case "Flatten":
+					validateFlatten(layerObj.layer);
+					return layerObj.layer;
+				case "MaxPooling2D":
+					validateMaxPooling2D(layerObj.layer);
+					return layerObj.layer;
+				case "Dense":
+					validateDense(layerObj.layer);
+					const copy: any = { ...layerObj };
+					copy.layer.kernelRegularizer = regularizerToFunction(copy.layer.kernelRegularizer);
+					return copy.layer;
+				case "Conv2D":
+					validateConv2D(layerObj.layer);
+					const copy2: any = { ...layerObj };
+					copy2.layer.kernelRegularizer = regularizerToFunction(copy2.layer.kernelRegularizer);
+					return copy.layer;
+				default:
+					throw new Error("Invaild Layer");
+			}
+		});
+		return fixedLayers;
+	} catch (error) {
+		//here instead save it to an error log
 	}
-}
+};
 
-function convertLayer(layer: MyLayer){
-	return {	activation: layer.activation,
-		units: layer.units,
-		kernelRegularizer: regularizerToFunction(layer.regularizer)}
-}
+const validateDense = (layer: any) => {
+	try {
+		if (layer.units > 10 || layer.units < 1) throw new Error("Invaild Units");
+		if (activationList.find((element) => element == layer.activation) == undefined) {
+			throw new Error("Invaild Activation");
+		}
+		if (regularizerList.find((element) => element == layer.kernelRegularizer.regularizer) == undefined) {
+			throw new Error("Invaild regularizer");
+		}
+		if (lambdaList.find((element) => element == layer.kernelRegularizer.lambda) == undefined) {
+			throw new Error("Invaild lambda");
+		}
+		if (kernelInitializerList.find((element) => element == layer.kernelInitializer) == undefined) {
+			throw new Error("Invaild kernelInitializer");
+		}
+	} catch (error) {
+		//send error to backend error log
+	}
+};
+
+const validateConv2D = (layer: any) => {
+	try {
+		if (layer.units > 10 || layer.units < 1) throw new Error("Invaild kerenelSize");
+		if (layer.units > 10 || layer.units < 1) throw new Error("Invaild filters");
+		if (layer.units > 10 || layer.units < 1) throw new Error("Invaild strides");
+		if (activationList.find((element) => element == layer.activation) == undefined) {
+			throw new Error("Invaild Activation");
+		}
+		if (regularizerList.find((element) => element == layer.kernelRegularizer.regularizer) == undefined) {
+			throw new Error("Invaild regularizer");
+		}
+		if (lambdaList.find((element) => element == layer.kernelRegularizer.lambda) == undefined) {
+			throw new Error("Invaild lambda");
+		}
+		if (kernelInitializerList.find((element) => element == layer.kernelInitializer) == undefined) {
+			throw new Error("Invaild kernelInitializer");
+		}
+	} catch (error) {
+		//send error to backend error log
+	}
+};
+
+const validateMaxPooling2D = (layer: any) => {
+	//if pool size is invalid is could crash the backend
+	try {
+		const pool = layer.poolSize[0] * layer.poolSize[1];
+		const strides = layer.strides[0] * layer.strides[1];
+		if (pool > 100 || layer.units < 1) throw new Error("Invaild poolSize");
+		if (layer.units > 100 || layer.units < 1) throw new Error("Invaild poolSize");
+	} catch (error) {
+		//send error to backend error log
+	}
+};
+
+const validateFlatten = (layer: any) => {
+	try {
+		if (Object.keys(layer).length === 0) throw new Error("Invaild Flatten Layer");
+	} catch (error) {
+		//send error to backend error log
+	}
+};
