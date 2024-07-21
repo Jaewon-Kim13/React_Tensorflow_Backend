@@ -2,16 +2,32 @@ import express from "express";
 import cors from "cors";
 import fileSystem from "node:fs";
 import { getNumberData } from "./scripts/DataFunctions";
+import { compileModel, trainModel } from "./scripts/TensorflowFunctions";
+import * as tf from "@tensorflow/tfjs-node";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+const rawNumberData = getNumberData();
+const numberData = tf.tidy(() => {
+	const data = getNumberData();
+	const tensorX = tf.tensor(data.x).reshape([9999, 28, 28, 1]);
+	const tensorY = tf.tensor1d(data.y);
+
+	return { tensorX, tensorY };
+});
+
 //for testing, wont use in final product since all data should be processes in the backend
 app.get("/number-data", async (req, res) => {
 	try {
-		const numberData = await getNumberData();
-		res.send({ type: "number_test", size: [numberData.x.length, numberData.y.length], data: numberData });
+		const random = Math.random() * 10000;
+		res.send({
+			type: "number_test",
+			xShape: numberData.tensorX.shape,
+			yShape: numberData.tensorY.shape,
+			randomSample: { x: rawNumberData.x[1], y: rawNumberData.y[1] },
+		});
 	} catch (error) {
 		res.status(500).send({ error: "Failed to retrieve number data" });
 	}
@@ -25,8 +41,16 @@ app.get("/number-data", async (req, res) => {
 //check maybe sending tf.show()? maybe it returns html?
 
 //compiles model and sends it back will most likely use post
-app.post("/compile", (req, res) => {
-	const { layers, loss } = req.body;
+app.post("/compile", async (req, res) => {
+	const { layers, compilerSettings } = req.body;
+	try {
+		const model = await compileModel(layers, compilerSettings);
+		const history = await trainModel(model, compilerSettings, numberData);
+		//res.json({ Working: "No errors" });
+		res.send({ history: history, model: JSON.stringify(model) });
+	} catch (error) {
+		res.send("MODEL COMPILE ERROR: " + error);
+	}
 });
 
 app.post("/train", (req, res) => {});
@@ -36,6 +60,6 @@ app.get("/data/:dataset-name/:index", (req, res) => {});
 
 //trains model and sends it back, look into post-training quantization for optimizing preformance, will most likely use post
 
-app.listen(8800, () => {
+app.listen(8804, () => {
 	console.log("Backend Connection Established");
 });

@@ -90,36 +90,32 @@ export const kernelInitializerList = [
 
 //helper functions
 export const convertLayers = (layers: any[]) => {
-	let fixedLayers;
-	try {
-		//first check if the layers object has been mannipulated
-		const layerCheck: Layer[] = layers;
-		//validate the layers data
-		fixedLayers = layers.map((layerObj, index) => {
-			switch (layerObj.type) {
-				case "Flatten":
-					validateFlatten(layerObj.layer);
-					return layerObj;
-				case "MaxPooling2D":
-					validateMaxPooling2D(layerObj.layer);
-					return layerObj;
-				case "Dense":
-					validateDense(layerObj.layer);
-					const copy: any = { ...layerObj };
-					copy.layer.kernelRegularizer = regularizerToFunction(copy.layer.kernelRegularizer);
-					return copy;
-				case "Conv2D":
-					validateConv2D(layerObj.layer);
-					const copy2: any = { ...layerObj };
-					copy2.layer.kernelRegularizer = regularizerToFunction(copy2.layer.kernelRegularizer);
-					return copy;
-				default:
-					throw new Error("Invaild Layer");
-			}
-		});
-	} catch (error) {
-		//here instead save it to an error log
-	}
+	//first check if the layers object has been mannipulated
+	const layerCheck: Layer[] = layers;
+	//validate the layers data
+	let fixedLayers = layers.map((layerObj, index) => {
+		switch (layerObj.type) {
+			case "Flatten":
+				validateFlatten(layerObj.layer);
+				return layerObj;
+			case "MaxPooling2D":
+				validateMaxPooling2D(layerObj.layer);
+				return layerObj;
+			case "Dense":
+				validateDense(layerObj.layer);
+				const copy: any = { ...layerObj };
+				copy.layer.kernelRegularizer = regularizerToFunction(copy.layer.kernelRegularizer);
+				return copy;
+			case "Conv2D":
+				validateConv2D(layerObj.layer);
+				const copy2: any = { ...layerObj };
+				copy2.layer.kernelRegularizer = regularizerToFunction(copy2.layer.kernelRegularizer);
+				return copy2;
+			default:
+				throw new Error("Invaild Layer");
+		}
+	});
+
 	return fixedLayers;
 };
 
@@ -140,64 +136,64 @@ function regularizerToFunction(reg: { regularizer: string; lambda: number }) {
 	return regularizerFunction;
 }
 
+export const convertOptimizer = (optimizer: { name: string; learningRate: number }) => {
+	let optimizerFunction;
+	switch (optimizer.name) {
+		case "sdg":
+			optimizerFunction = tf.train.sgd(optimizer.learningRate);
+			break;
+		case "adam":
+			optimizerFunction = tf.train.adam(optimizer.learningRate);
+			break;
+	}
+	return optimizerFunction;
+};
+
 const validateDense = (layer: any) => {
-	try {
-		if (layer.units > 10 || layer.units < 1) throw new Error("Invaild Units");
-		if (activationList.find((element) => element == layer.activation) == undefined) {
-			throw new Error("Invaild Activation");
-		}
-		if (regularizerList.find((element) => element == layer.kernelRegularizer.regularizer) == undefined) {
-			throw new Error("Invaild regularizer");
-		}
-		if (lambdaList.find((element) => element == layer.kernelRegularizer.lambda) == undefined) {
-			throw new Error("Invaild lambda");
-		}
-		if (kernelInitializerList.find((element) => element == layer.kernelInitializer) == undefined) {
-			throw new Error("Invaild kernelInitializer");
-		}
-	} catch (error) {
-		//send error to backend error log
+	if (layer.units > 10 || layer.units < 1) throw new Error("Invaild Units");
+	if (activationList.find((element) => element == layer.activation) == undefined) {
+		throw new Error("Invaild Activation");
+	}
+	if (regularizerList.find((element) => element == layer.kernelRegularizer.regularizer) == undefined) {
+		throw new Error("Invaild regularizer");
+	}
+	if (lambdaList.find((element) => element == layer.kernelRegularizer.lambda) == undefined) {
+		throw new Error("Invaild lambda");
+	}
+	if (kernelInitializerList.find((element) => element == layer.kernelInitializer) == undefined) {
+		throw new Error("Invaild kernelInitializer");
 	}
 };
 
 const validateConv2D = (layer: any) => {
-	try {
-		if (layer.units > 10 || layer.units < 1) throw new Error("Invaild kerenelSize");
-		if (layer.units > 10 || layer.units < 1) throw new Error("Invaild filters");
-		if (layer.units > 10 || layer.units < 1) throw new Error("Invaild strides");
-		if (activationList.find((element) => element == layer.activation) == undefined) {
-			throw new Error("Invaild Activation");
-		}
-		if (regularizerList.find((element) => element == layer.kernelRegularizer.regularizer) == undefined) {
-			throw new Error("Invaild regularizer");
-		}
-		if (lambdaList.find((element) => element == layer.kernelRegularizer.lambda) == undefined) {
-			throw new Error("Invaild lambda");
-		}
-		if (kernelInitializerList.find((element) => element == layer.kernelInitializer) == undefined) {
-			throw new Error("Invaild kernelInitializer");
-		}
-	} catch (error) {
-		//send error to backend error log
+	if (layer.kernelSize > 10 || layer.kerenelSize < 1) throw new Error("Invaild kerenelSize");
+	if (layer.filters > 20 || layer.filters < 1) throw new Error("Invaild filters");
+	if (layer.strides > 10 || layer.strides < 1) throw new Error("Invaild strides");
+	if (activationList.find((element) => element == layer.activation) == undefined) {
+		throw new Error("Invaild Activation");
+	}
+	if (regularizerList.find((element) => element == layer.kernelRegularizer.regularizer) == undefined) {
+		throw new Error("Invaild regularizer");
+	}
+	if (lambdaList.find((element) => element == layer.kernelRegularizer.lambda) == undefined) {
+		throw new Error("Invaild lambda");
+	}
+	if (kernelInitializerList.find((element) => element == layer.kernelInitializer) == undefined) {
+		throw new Error("Invaild kernelInitializer");
 	}
 };
 
 const validateMaxPooling2D = (layer: any) => {
 	//if pool size is invalid is could crash the backend
-	try {
-		const pool = layer.poolSize[0] * layer.poolSize[1];
-		const strides = layer.strides[0] * layer.strides[1];
-		if (pool > 100 || layer.units < 1) throw new Error("Invaild poolSize");
-		if (layer.units > 100 || layer.units < 1) throw new Error("Invaild poolSize");
-	} catch (error) {
-		//send error to backend error log
-	}
+
+	const pool = layer.poolSize[0] * layer.poolSize[1];
+	const strides = layer.strides[0] * layer.strides[1];
+	if (pool > 100 || layer.units < 1) throw new Error("Invaild poolSize");
+	if (layer.units > 100 || layer.units < 1) throw new Error("Invaild poolSize");
 };
 
 const validateFlatten = (layer: any) => {
-	try {
-		if (Object.keys(layer).length === 0) throw new Error("Invaild Flatten Layer");
-	} catch (error) {
-		//send error to backend error log
-	}
+	if (Object.keys(layer).length != 0) throw new Error("Invaild Flatten Layer");
 };
+
+const validateCompilerSettings = (setting: any) => {};
