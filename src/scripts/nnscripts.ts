@@ -98,18 +98,18 @@ export const convertLayers = (layers: any[]) => {
 		let fixedLayers = layers.map((layerObj, index) => {
 			switch (layerObj.type) {
 				case "Flatten":
-					//if (!validateFlatten(layerObj.layer)) throw new Error("Invalid Flatten Layer");
+					if (validateFlatten(layerObj.layer) == false) throw new Error("Invalid Flatten Layer");
 					return layerObj;
 				case "MaxPooling2D":
-					//if (!validateMaxPooling2D(layerObj.layer)) throw new Error("Invalid Flatten Layer");
+					if (!validateMaxPooling2D(layerObj.layer)) throw new Error("Invalid Flatten Layer");
 					return layerObj;
 				case "Dense":
-					//if (!validateDense(layerObj.layer)) throw new Error("Invalid Dense Layer");
+					if (!validateDense(layerObj.layer)) throw new Error("Invalid Dense Layer");
 					const copy: any = { ...layerObj };
 					copy.layer.kernelRegularizer = regularizerToFunction(copy.layer.kernelRegularizer);
 					return copy;
 				case "Conv2D":
-					//if (!validateConv2D(layerObj.layer)) throw new Error("Invalid Conv2D Layer");
+					if (!validateConv2D(layerObj.layer)) throw new Error("Invalid Conv2D Layer");
 					const copy2: any = { ...layerObj };
 					copy2.layer.kernelRegularizer = regularizerToFunction(copy2.layer.kernelRegularizer);
 					return copy2;
@@ -154,6 +154,8 @@ const validateDense = (layer: any) => {
 	if (kernelInitializerList.find((element) => element == layer.kernelInitializer) == undefined) {
 		return false;
 	}
+
+	return true;
 };
 
 const validateConv2D = (layer: any) => {
@@ -183,10 +185,12 @@ const validateMaxPooling2D = (layer: any) => {
 	const strides = layer.strides[0] * layer.strides[1];
 	if (pool > 100 || layer.units < 1) return false;
 	if (layer.units > 100 || layer.units < 1) return false;
+	return true;
 };
 
 const validateFlatten = (layer: any) => {
 	if (Object.keys(layer).length != 0) return false;
+	return true;
 };
 
 export const convertCompilerSettings = (compilerSettings: any) => {

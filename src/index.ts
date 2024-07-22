@@ -44,20 +44,24 @@ app.get("/number-data", async (req, res) => {
 
 //compiles model and sends it back will most likely use post
 app.post("/compile", async (req, res) => {
-	const { layers, compilerSettings } = req.body;
-	const layerArr = convertLayers(layers);
-	const compSet = convertCompilerSettings(compilerSettings);
-	if (Object.keys(compSet).length === 0) {
-		throw new Error("COMPILER SETTING ERROR: Please stop trying to break my site, I'm broken and can barely afford this server :(");
-	}
-	if (layerArr.length === 0) {
-		throw new Error("LAYER ERROR: Please stop trying to break my site, I'm broken and can barely afford this server :(");
-	}
-	const model = await compileModel(layerArr, compSet);
+	try {
+		const { layers, compilerSettings } = req.body;
+		const layerArr = convertLayers(layers);
+		const compSet = convertCompilerSettings(compilerSettings);
+		if (Object.keys(compSet).length === 0) {
+			throw new Error("COMPILER SETTING ERROR: Please stop trying to break my site, I'm broken and can barely afford this server :(");
+		}
+		if (layerArr.length === 0) {
+			throw new Error("LAYER ERROR: Please stop trying to break my site, I'm broken and can barely afford this server :(");
+		}
+		const model = await compileModel(layerArr, compSet);
 
-	const history = await trainModel(model, compSet, numberData);
-	//res.json({ Working: "No errors" });
-	res.send({ history: history });
+		const history = await trainModel(model, compSet, numberData);
+		//res.json({ Working: "No errors" });
+		res.send({ history: history });
+	} catch (error) {
+		res.send("My guy, I'm am broken there are limits on the settings for a reason, please stop trying to break my site");
+	}
 });
 
 app.post("/train", (req, res) => {});
