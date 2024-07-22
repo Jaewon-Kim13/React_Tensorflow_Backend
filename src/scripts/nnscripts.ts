@@ -87,36 +87,40 @@ export const kernelInitializerList = [
 	"varianceScaling",
 	"zeros",
 ];
+export const optimizerList = ["sgd", "adam"];
 
 //helper functions
 export const convertLayers = (layers: any[]) => {
-	//first check if the layers object has been mannipulated
-	const layerCheck: Layer[] = layers;
-	//validate the layers data
-	let fixedLayers = layers.map((layerObj, index) => {
-		switch (layerObj.type) {
-			case "Flatten":
-				validateFlatten(layerObj.layer);
-				return layerObj;
-			case "MaxPooling2D":
-				validateMaxPooling2D(layerObj.layer);
-				return layerObj;
-			case "Dense":
-				validateDense(layerObj.layer);
-				const copy: any = { ...layerObj };
-				copy.layer.kernelRegularizer = regularizerToFunction(copy.layer.kernelRegularizer);
-				return copy;
-			case "Conv2D":
-				validateConv2D(layerObj.layer);
-				const copy2: any = { ...layerObj };
-				copy2.layer.kernelRegularizer = regularizerToFunction(copy2.layer.kernelRegularizer);
-				return copy2;
-			default:
-				throw new Error("Invaild Layer");
-		}
-	});
-
-	return fixedLayers;
+	try {
+		//first check if the layers object has been mannipulated
+		const layerCheck: Layer[] = layers;
+		//validate the layers data
+		let fixedLayers = layers.map((layerObj, index) => {
+			switch (layerObj.type) {
+				case "Flatten":
+					//if (!validateFlatten(layerObj.layer)) throw new Error("Invalid Flatten Layer");
+					return layerObj;
+				case "MaxPooling2D":
+					//if (!validateMaxPooling2D(layerObj.layer)) throw new Error("Invalid Flatten Layer");
+					return layerObj;
+				case "Dense":
+					//if (!validateDense(layerObj.layer)) throw new Error("Invalid Dense Layer");
+					const copy: any = { ...layerObj };
+					copy.layer.kernelRegularizer = regularizerToFunction(copy.layer.kernelRegularizer);
+					return copy;
+				case "Conv2D":
+					//if (!validateConv2D(layerObj.layer)) throw new Error("Invalid Conv2D Layer");
+					const copy2: any = { ...layerObj };
+					copy2.layer.kernelRegularizer = regularizerToFunction(copy2.layer.kernelRegularizer);
+					return copy2;
+				default:
+					throw new Error("Invaild Layer");
+			}
+		});
+		return fixedLayers;
+	} catch (error) {
+		return [];
+	}
 };
 
 function regularizerToFunction(reg: { regularizer: string; lambda: number }) {
@@ -136,51 +140,40 @@ function regularizerToFunction(reg: { regularizer: string; lambda: number }) {
 	return regularizerFunction;
 }
 
-export const convertOptimizer = (optimizer: { name: string; learningRate: number }) => {
-	let optimizerFunction;
-	switch (optimizer.name) {
-		case "sdg":
-			optimizerFunction = tf.train.sgd(optimizer.learningRate);
-			break;
-		case "adam":
-			optimizerFunction = tf.train.adam(optimizer.learningRate);
-			break;
-	}
-	return optimizerFunction;
-};
-
 const validateDense = (layer: any) => {
-	if (layer.units > 10 || layer.units < 1) throw new Error("Invaild Units");
+	if (layer.units > 10 || layer.units < 1) return false;
 	if (activationList.find((element) => element == layer.activation) == undefined) {
-		throw new Error("Invaild Activation");
+		return false;
 	}
 	if (regularizerList.find((element) => element == layer.kernelRegularizer.regularizer) == undefined) {
-		throw new Error("Invaild regularizer");
+		return false;
 	}
 	if (lambdaList.find((element) => element == layer.kernelRegularizer.lambda) == undefined) {
-		throw new Error("Invaild lambda");
+		return false;
 	}
 	if (kernelInitializerList.find((element) => element == layer.kernelInitializer) == undefined) {
-		throw new Error("Invaild kernelInitializer");
+		return false;
 	}
 };
 
 const validateConv2D = (layer: any) => {
-	if (layer.kernelSize > 10 || layer.kerenelSize < 1) throw new Error("Invaild kerenelSize");
-	if (layer.filters > 20 || layer.filters < 1) throw new Error("Invaild filters");
-	if (layer.strides > 10 || layer.strides < 1) throw new Error("Invaild strides");
+	if (layer.kernelSize > 10 || layer.kerenelSize < 1) return false;
+	if (layer.filters > 20 || layer.filters < 1) return false;
+	if (layer.strides > 10 || layer.strides < 1) return false;
 	if (activationList.find((element) => element == layer.activation) == undefined) {
-		throw new Error("Invaild Activation");
+		return false;
 	}
 	if (regularizerList.find((element) => element == layer.kernelRegularizer.regularizer) == undefined) {
-		throw new Error("Invaild regularizer");
+		return false;
 	}
 	if (lambdaList.find((element) => element == layer.kernelRegularizer.lambda) == undefined) {
-		throw new Error("Invaild lambda");
+		return false;
 	}
 	if (kernelInitializerList.find((element) => element == layer.kernelInitializer) == undefined) {
-		throw new Error("Invaild kernelInitializer");
+		return false;
 	}
+
+	return true;
 };
 
 const validateMaxPooling2D = (layer: any) => {
@@ -188,12 +181,43 @@ const validateMaxPooling2D = (layer: any) => {
 
 	const pool = layer.poolSize[0] * layer.poolSize[1];
 	const strides = layer.strides[0] * layer.strides[1];
-	if (pool > 100 || layer.units < 1) throw new Error("Invaild poolSize");
-	if (layer.units > 100 || layer.units < 1) throw new Error("Invaild poolSize");
+	if (pool > 100 || layer.units < 1) return false;
+	if (layer.units > 100 || layer.units < 1) return false;
 };
 
 const validateFlatten = (layer: any) => {
-	if (Object.keys(layer).length != 0) throw new Error("Invaild Flatten Layer");
+	if (Object.keys(layer).length != 0) return false;
 };
 
-const validateCompilerSettings = (setting: any) => {};
+export const convertCompilerSettings = (compilerSettings: any) => {
+	if (!validateCompilerSettings(compilerSettings)) return {};
+	const copy = { ...compilerSettings };
+
+	copy.ratio = compilerSettings.ratio / 100;
+	copy.batchSize = Math.pow(2, compilerSettings.batchSize);
+	copy.optimizer = convertOptimizer(compilerSettings.optimizer);
+	return copy;
+};
+const validateCompilerSettings = (compilerSettings: any) => {
+	if (compilerSettings.ratio < 10 || compilerSettings.ratio > 90) return false;
+	if (compilerSettings.batch < 1 || compilerSettings.batch > 10) return false;
+	if (compilerSettings.epochs < 1 || compilerSettings.epochs > 10) return false;
+	if (compilerSettings.optimizer.learningRate < 1 || compilerSettings.optimizer.learningRate > 100) return false;
+	if (optimizerList.find((element) => element == compilerSettings.optimizer.name) == undefined) {
+		return false;
+	}
+
+	return true;
+};
+export const convertOptimizer = (optimizer: { name: string; learningRate: number }) => {
+	let optimizerFunction;
+	switch (optimizer.name) {
+		case "sdg":
+			optimizerFunction = tf.train.sgd(optimizer.learningRate / 100);
+			break;
+		case "adam":
+			optimizerFunction = tf.train.adam(optimizer.learningRate / 100);
+			break;
+	}
+	return optimizerFunction;
+};

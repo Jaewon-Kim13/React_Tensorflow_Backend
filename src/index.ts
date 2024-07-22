@@ -4,6 +4,7 @@ import fileSystem from "node:fs";
 import { getNumberData } from "./scripts/DataFunctions";
 import { compileModel, trainModel } from "./scripts/TensorflowFunctions";
 import * as tf from "@tensorflow/tfjs-node";
+import { convertCompilerSettings, convertLayers } from "./scripts/nnscripts";
 
 const app = express();
 app.use(cors());
@@ -43,14 +44,19 @@ app.get("/number-data", async (req, res) => {
 //compiles model and sends it back will most likely use post
 app.post("/compile", async (req, res) => {
 	const { layers, compilerSettings } = req.body;
-	try {
-		const model = await compileModel(layers, compilerSettings);
-		const history = await trainModel(model, compilerSettings, numberData);
-		//res.json({ Working: "No errors" });
-		res.send({ history: history, model: JSON.stringify(model) });
-	} catch (error) {
-		res.send("MODEL COMPILE ERROR: " + error);
+	const layerArr = convertLayers(layers);
+	const compSet = convertCompilerSettings(compilerSettings);
+	if (Object.keys(compSet).length === 0) {
+		throw new Error("COMPILER SETTING ERROR: Please stop trying to break my site, I'm broken and can barely afford this server :(");
 	}
+	if (layerArr.length === 0) {
+		throw new Error("LAYER ERROR: Please stop trying to break my site, I'm broken and can barely afford this server :(");
+	}
+	const model = await compileModel(layerArr, compSet);
+
+	const history = await trainModel(model, compSet, numberData);
+	//res.json({ Working: "No errors" });
+	res.send({ history: history });
 });
 
 app.post("/train", (req, res) => {});

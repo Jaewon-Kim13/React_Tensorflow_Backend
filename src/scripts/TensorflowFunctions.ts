@@ -1,15 +1,14 @@
 import * as tf from "@tensorflow/tfjs-node";
-import { convertLayers, convertOptimizer } from "./nnscripts";
-import { getNumberData } from "./DataFunctions";
+import { convertCompilerSettings, convertLayers, convertOptimizer } from "./nnscripts";
+
 //main functions
 export const compileModel = async (layers: any[], compilerSettings: any) => {
+	const model = tf.sequential();
 	if (layers[0].type == "Conv2D") {
 		layers[0].layer.inputShape = [28, 28, 1];
 	}
-	const layerArr = convertLayers(layers);
-	const model = tf.sequential();
 
-	layerArr.forEach((layer: any, index: any) => {
+	layers.forEach((layer: any, index: any) => {
 		switch (layer.type) {
 			case "Flatten":
 				model.add(tf.layers.flatten());
@@ -38,10 +37,15 @@ export const compileModel = async (layers: any[], compilerSettings: any) => {
 };
 
 export const trainModel = async (model: tf.LayersModel, compilerSettings: any, data: { tensorX: tf.Tensor; tensorY: tf.Tensor }) => {
-	compilerSettings.optimizer = convertOptimizer(compilerSettings.optimizer);
-	const dataSize = data.tensorX.shape[0] * (compilerSettings.ratio / 100);
+	const testingAmount = Math.ceil(compilerSettings.ratio * data.tensorX.shape[0]);
+	const trainingAmount = data.tensorX.shape[0] - testingAmount;
 
-	return model.fit(data.tensorX, data.tensorY, {
+	const [testX, trainX] = tf.split(data.tensorX, [testingAmount, trainingAmount]);
+	const [testY, trainY] = tf.split(data.tensorY, [testingAmount, trainingAmount]);
+
+	return model.fit(trainX, trainY, {
+		batchSize: compilerSettings.batchSize,
+		validationData: [testX, testY],
 		epochs: compilerSettings.epochs,
 		shuffle: true,
 	});
