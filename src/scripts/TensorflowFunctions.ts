@@ -29,7 +29,7 @@ export const compileModel = async (layers: any[], compilerSettings: any) => {
 
 	model.compile({
 		loss: "sparseCategoricalCrossentropy",
-		optimizer: tf.train.adam(),
+		optimizer: compilerSettings.optimizer,
 		metrics: ["accuracy"],
 	});
 

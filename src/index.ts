@@ -10,11 +10,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const rawNumberData = getNumberData();
+const rawNumberData = getNumberData("./data/num_train_small.csv");
+const dataSize = rawNumberData.y.length;
+
 const numberData = tf.tidy(() => {
-	const data = getNumberData();
-	const tensorX = tf.tensor(data.x).reshape([9999, 28, 28, 1]);
-	const tensorY = tf.tensor1d(data.y);
+	const tensorX = tf.tensor(rawNumberData.x).reshape([dataSize, 28, 28, 1]);
+	const tensorY = tf.tensor1d(rawNumberData.y);
 
 	return { tensorX, tensorY };
 });
@@ -27,7 +28,7 @@ app.get("/number-data", async (req, res) => {
 			type: "number_test",
 			xShape: numberData.tensorX.shape,
 			yShape: numberData.tensorY.shape,
-			randomSample: { x: rawNumberData.x[1], y: rawNumberData.y[1] },
+			randomSample: { x: rawNumberData.x[dataSize - 1], y: rawNumberData.y[dataSize - 1], length: rawNumberData.y.length },
 		});
 	} catch (error) {
 		res.status(500).send({ error: "Failed to retrieve number data" });

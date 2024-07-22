@@ -4,9 +4,9 @@ import fileSystem from "node:fs";
 
 import * as tf from "@tensorflow/tfjs-node";
 
-export function getNumberData(): { x: number[][]; y: number[] } {
+export function getNumberData(file: string): { x: number[][]; y: number[] } {
 	try {
-		const fileContent = fileSystem.readFileSync("./data/num_train_small.csv", "utf8");
+		const fileContent = fileSystem.readFileSync(file, "utf8");
 		const result = numCSVtoJSON(fileContent.split("\r\n"));
 		return result;
 	} catch (err) {
