@@ -54,3 +54,26 @@ export const trainModel = async (model: tf.LayersModel, compilerSettings: any, d
 export const predict = (data: number[], model: any) => {
 	const tensor = tf.tensor(data);
 };
+
+export const getModelWeights = async (model: any, layers: any) => {
+	const weights = [];
+
+	for (let i = 0; i < model.layers.length; i++) {
+		if (layers[i].type == "MaxPooling2D" || layers[i].type == "Flatten") {
+			weights.push([]);
+		} else {
+			const layerWeights = model.layers[i].getWeights();
+			const layerWeightsArray = [];
+
+			for (let j = 0; j < layerWeights.length; j++) {
+				// Convert each Tensor to a JavaScript array using await
+				const array = await layerWeights[j].array();
+				layerWeightsArray.push(array);
+			}
+
+			weights.push(layerWeightsArray);
+		}
+	}
+
+	return weights;
+};

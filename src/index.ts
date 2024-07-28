@@ -2,9 +2,10 @@ import express from "express";
 import cors from "cors";
 import fileSystem from "node:fs";
 import { getNumberData } from "./scripts/DataFunctions";
-import { compileModel, trainModel } from "./scripts/TensorflowFunctions";
+import { compileModel, getModelWeights, trainModel } from "./scripts/TensorflowFunctions";
 import * as tf from "@tensorflow/tfjs-node";
 import { convertCompilerSettings, convertLayers } from "./scripts/nnscripts";
+import e from "express";
 
 const app = express();
 app.use(cors());
@@ -48,6 +49,7 @@ app.post("/compile", async (req, res) => {
 		const { layers, compilerSettings } = req.body;
 		const layerArr = convertLayers(layers);
 		const compSet = convertCompilerSettings(compilerSettings);
+
 		if (Object.keys(compSet).length === 0) {
 			throw new Error("COMPILER SETTING ERROR: Please stop trying to break my site, I'm broken and can barely afford this server :(");
 		}
@@ -55,12 +57,15 @@ app.post("/compile", async (req, res) => {
 			throw new Error("LAYER ERROR: Please stop trying to break my site, I'm broken and can barely afford this server :(");
 		}
 		const model = await compileModel(layerArr, compSet);
+		const untrainedWeights = await getModelWeights(model, layers);
 
 		const history = await trainModel(model, compSet, numberData);
+		const trainedWeights = await getModelWeights(model, layers);
+
 		//res.json({ Working: "No errors" });
-		res.send({ history: history });
+		res.send({ history: history, model: model, trainedWeights: trainedWeights, untrainedWeights: untrainedWeights });
 	} catch (error) {
-		res.send("My guy, I'm am broken there are limits on the settings for a reason, please stop trying to break my site");
+		res.send(error);
 	}
 });
 
