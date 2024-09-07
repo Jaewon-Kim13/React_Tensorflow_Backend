@@ -65,7 +65,8 @@ app.post("/compile", async (req, res) => {
 		//res.json({ Working: "No errors" });
 		res.send({ history: history, model: model, trainedWeights: trainedWeights, untrainedWeights: untrainedWeights });
 	} catch (error) {
-		res.send(error);
+		console.log(error);
+		res.send({ error: "ERROR " + error?.toString() });
 	}
 });
 

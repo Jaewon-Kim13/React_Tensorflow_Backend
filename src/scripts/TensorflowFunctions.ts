@@ -1,29 +1,31 @@
 import * as tf from "@tensorflow/tfjs-node";
-import { convertCompilerSettings, convertLayers, convertOptimizer } from "./nnscripts";
+import { convertCompilerSettings, convertLayers, convertOptimizer, Layer } from "./nnscripts";
 
 //main functions
 export const compileModel = async (layers: any[], compilerSettings: any) => {
 	const model = tf.sequential();
-	if (layers[0].type == "Conv2D") {
+	if (layers[0].type == "Conv2D" || layers[0].type == "Flatten") {
 		layers[0].layer.inputShape = [28, 28, 1];
 	}
 
-	layers.forEach((layer: any, index: any) => {
-		switch (layer.type) {
-			case "Flatten":
-				model.add(tf.layers.flatten());
-				break;
-			case "MaxPooling2D":
-				model.add(tf.layers.maxPool2d(layer.layer));
-				break;
-			case "Dense":
-				model.add(tf.layers.dense(layer.layer));
-				break;
-			case "Conv2D":
-				model.add(tf.layers.conv2d(layer.layer));
-				break;
-			default:
-				throw new Error("Invaild Layer");
+	layers.forEach((layer: any, index: number) => {
+		if (layer && layer.type) {
+			switch (layer.type) {
+				case "Flatten":
+					model.add(tf.layers.flatten(layer.layer));
+					break;
+				case "MaxPooling2D":
+					model.add(tf.layers.maxPooling2d(layer.layer));
+					break;
+				case "Dense":
+					model.add(tf.layers.dense(layer.layer));
+					break;
+				case "Conv2D":
+					model.add(tf.layers.conv2d(layer.layer));
+					break;
+				default:
+					throw new Error("Invaild Layer");
+			}
 		}
 	});
 

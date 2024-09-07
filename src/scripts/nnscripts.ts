@@ -214,14 +214,9 @@ const validateCompilerSettings = (compilerSettings: any) => {
 	return true;
 };
 export const convertOptimizer = (optimizer: { name: string; learningRate: number }) => {
-	let optimizerFunction;
-	switch (optimizer.name) {
-		case "sdg":
-			optimizerFunction = tf.train.sgd(optimizer.learningRate / 100);
-			break;
-		case "adam":
-			optimizerFunction = tf.train.adam(optimizer.learningRate / 100);
-			break;
+	if (optimizer.name === "adam") {
+		return tf.train.adam(optimizer.learningRate / 100);
+	} else {
+		return tf.train.sgd(optimizer.learningRate / 100);
 	}
-	return optimizerFunction;
 };
